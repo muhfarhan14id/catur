@@ -3,44 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catur Pro - Advisor Interaktif</title>
+    <title>Catur Pro - Tournament Edition</title>
     <style>
         :root {
-            --bg: #0a0a0a;
-            --panel: #161616;
-            --board-light: #eaecd0;
-            --board-dark: #779455;
-            --accent: #00d2ff;
-            --danger: #ff4b2b;
+            --bg: #0a0a0c;
+            --panel: #16161a;
+            --board-light: #f0d9b5;
+            --board-dark: #b58863;
+            --accent: #008cff;
             --text: #e0e0e0;
-            --square-size: 70px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
 
         body {
             background-color: var(--bg);
             color: var(--text);
             display: flex;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center;
             min-height: 100vh;
-            padding: 20px;
         }
 
-        .main-container {
+        .main-layout {
             display: flex;
             flex-wrap: wrap;
             gap: 30px;
+            padding: 20px;
             max-width: 1100px;
             width: 100%;
             justify-content: center;
         }
 
-        /* Fixed Board Logic */
-        .board-container {
+        /* Fixed Board - No Shrinking */
+        .board-wrapper {
             width: 560px;
-            flex-shrink: 0; /* Mencegah penyusutan */
+            height: 560px;
+            flex-shrink: 0;
+            border: 6px solid #222;
+            box-shadow: 0 0 50px rgba(0,0,0,0.7);
+            position: relative;
         }
 
         .board {
@@ -49,9 +51,6 @@
             grid-template-rows: repeat(8, 70px);
             width: 560px;
             height: 560px;
-            border: 5px solid #333;
-            box-shadow: 0 0 40px rgba(0,0,0,0.8);
-            position: relative;
         }
 
         .square {
@@ -67,148 +66,135 @@
 
         .square.light { background-color: var(--board-light); }
         .square.dark { background-color: var(--board-dark); }
-        .square.selected { background-color: rgba(0, 210, 255, 0.5) !important; }
-        .square.last-move { background-color: rgba(255, 255, 0, 0.3) !important; }
-        .square.check { background-color: var(--danger) !important; }
-        .square.hint-target { box-shadow: inset 0 0 0 4px var(--accent); }
+        .square.last-move { background-color: rgba(255, 255, 0, 0.25) !important; }
+        .square.check { background-color: #ff4d4d !important; }
+        .square.selected { background-color: rgba(0, 140, 255, 0.4) !important; }
 
-        .piece { width: 90%; height: 90%; z-index: 5; pointer-events: none; }
+        .piece { width: 88%; height: 88%; z-index: 10; pointer-events: none; }
         .piece svg { width: 100%; height: 100%; }
 
-        .legal-dot {
-            width: 20px;
-            height: 20px;
+        .move-hint {
+            width: 18px;
+            height: 18px;
             background: rgba(0,0,0,0.1);
             border-radius: 50%;
         }
 
-        /* Advisor Panel */
-        .advisor-panel {
+        /* Side Panel */
+        .sidebar {
             flex: 1;
-            min-width: 350px;
+            min-width: 320px;
             background: var(--panel);
             border-radius: 12px;
-            padding: 20px;
+            padding: 24px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;
             border: 1px solid #222;
         }
 
-        .section-title {
-            font-size: 0.9rem;
+        .status-header {
+            font-size: 1.1rem;
             font-weight: bold;
+            text-align: center;
+            padding: 12px;
+            background: #000;
+            border-radius: 6px;
             color: var(--accent);
-            text-transform: uppercase;
-            border-bottom: 1px solid #333;
-            padding-bottom: 5px;
-            margin-bottom: 5px;
+            letter-spacing: 1px;
         }
 
-        .eval-bar-wrapper {
-            background: #222;
-            height: 12px;
-            border-radius: 6px;
+        .eval-section {
+            padding: 10px;
+            background: #0f0f12;
+            border-radius: 8px;
+        }
+
+        .eval-bar {
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
             overflow: hidden;
             display: flex;
             margin: 10px 0;
         }
-        #eval-w { background: white; width: 50%; transition: width 0.5s; }
-        #eval-b { background: #000; width: 50%; transition: width 0.5s; }
+        #bar-w { background: white; width: 50%; transition: width 0.6s ease-in-out; }
+        #bar-b { background: #555; width: 50%; }
 
-        .suggestion-box {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            padding: 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .suggestion-box:hover { border-color: var(--accent); background: #222; }
-        .suggestion-box.active { border-color: var(--accent); background: #003344; }
-
-        .btn {
-            padding: 12px;
-            border: none;
+        .log-container {
+            flex: 1;
+            background: #000;
             border-radius: 6px;
-            font-weight: bold;
+            padding: 10px;
+            font-size: 0.85rem;
+            color: #666;
+            font-family: monospace;
+            overflow-y: auto;
+            max-height: 150px;
+        }
+
+        .controls select, .controls button {
+            width: 100%;
+            padding: 12px;
+            background: #25252b;
+            color: #fff;
+            border: 1px solid #333;
+            border-radius: 6px;
             cursor: pointer;
-            transition: 0.2s;
-            text-transform: uppercase;
-        }
-        .btn-main { background: var(--accent); color: #000; width: 100%; }
-        .btn-reset { background: #333; color: #fff; width: 100%; }
-
-        #status-msg {
             font-weight: bold;
-            text-align: center;
-            font-size: 1.1rem;
-            margin-bottom: 10px;
+            margin-top: 10px;
         }
 
-        /* Mobile Adjustments */
         @media (max-width: 600px) {
-            .board-container { width: 320px; }
-            .board { grid-template-columns: repeat(8, 40px); grid-template-rows: repeat(8, 40px); width: 320px; height: 320px; }
+            .board-wrapper, .board { width: 320px; height: 320px; }
+            .board { grid-template-columns: repeat(8, 40px); grid-template-rows: repeat(8, 40px); }
             .square { width: 40px; height: 40px; }
-            .main-container { padding: 10px; }
         }
     </style>
 </head>
 <body>
 
-    <div class="main-container">
-        <!-- Board Section -->
+    <div class="main-layout">
         <div class="board-section">
-            <div id="status-msg">Giliran: Putih</div>
-            <div class="board-container">
+            <div id="game-status" class="status-header">GILIRAN: PUTIH</div>
+            <div class="board-wrapper">
                 <div id="board" class="board"></div>
-            </div>
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button class="btn btn-reset" onclick="resetGame()">Reset</button>
-                <button id="btn-execute" class="btn btn-main" style="display: none;" onclick="executeSuggested()">Eksekusi Saran</button>
             </div>
         </div>
 
-        <!-- Advisor Section -->
-        <div class="advisor-panel">
-            <div>
-                <div class="section-title">Keseimbangan Kekuatan</div>
-                <div class="eval-bar-wrapper">
-                    <div id="eval-w"></div>
-                    <div id="eval-b"></div>
+        <div class="sidebar">
+            <div class="controls">
+                <label style="font-size: 0.75rem; color: #555;">MODE PERMAINAN</label>
+                <select id="game-mode">
+                    <option value="pvp">Lawan Teman (1v1)</option>
+                    <option value="pve">Lawan Bot (25% Skill)</option>
+                </select>
+            </div>
+
+            <div class="eval-section">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                    <span>Evaluasi Posisi</span>
+                    <span id="eval-val">0.0</span>
                 </div>
-                <div id="eval-text" style="text-align: center; font-size: 0.8rem;">Analisis Netral (0.0)</div>
-            </div>
-
-            <div>
-                <div class="section-title">Ancaman AI (25% Skill)</div>
-                <div id="threat-log" style="font-size: 0.85rem; color: var(--danger);">Tidak ada ancaman terdeteksi.</div>
-            </div>
-
-            <div>
-                <div class="section-title">Pilih Saran Langkah</div>
-                <div id="suggestion-list" style="display: flex; flex-direction: column; gap: 8px;">
-                    <!-- Dihasilkan oleh JS -->
+                <div class="eval-bar">
+                    <div id="bar-w"></div>
+                    <div id="bar-b"></div>
                 </div>
             </div>
 
-            <div style="margin-top: auto; padding: 10px; background: #000; border-radius: 6px; font-size: 0.8rem;">
-                <strong>Panduan:</strong> Klik kotak pada papan atau pilih salah satu kotak saran di atas. Saran akan menyoroti langkah terbaik untuk menyerang AI.
+            <div class="log-container" id="move-log">
+                Menunggu langkah awal...
             </div>
+
+            <button onclick="resetGame()" style="background: #331111; color: #ff5555; border-color: #442222;">RESET PERMAINAN</button>
         </div>
     </div>
 
     <script>
         /**
-         * GAME LOGIC
+         * CORE CHESS ENGINE
          */
-        const PIECES = {
-            empty: 0,
-            wP: 1, wN: 2, wB: 3, wR: 4, wQ: 5, wK: 6,
-            bP: 7, bN: 8, bB: 9, bR: 10, bQ: 11, bK: 12
-        };
-
+        const PIECES = { empty:0, wP:1, wN:2, wB:3, wR:4, wQ:5, wK:6, bP:7, bN:8, bB:9, bR:10, bQ:11, bK:12 };
         const PIECE_SVG = {
             wP: '<svg viewBox="0 0 45 45"><path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" fill="#fff" stroke="#000" stroke-width="1.5"/></svg>',
             wN: '<svg viewBox="0 0 45 45"><path d="M22 10c10.5 1 16.5 8 16 29H15c0-9 10-6.5 8-21" fill="#fff" stroke="#000" stroke-width="1.5"/><path d="M24 18c.38 2.43-1.61 1.24-2.15 1.57-.59.35-.11 1.48.5 1.29 1.07-.35 2.14-.52 2.65-1.14.31-.38.11-1.4-.41-1.92-.37-.36-1.19-.36-1.4-.23-.21.13-.19.43.04.59.23.16.58.16.77.21.19.05.21.37.04.42-.17.05-.33-.2-.54-.23-.21-.03-.47.16-.41.34s.38.12.63.14c.25.02.48.42.25.54-.23.12-.52-.14-.7-.09-.18.05-.2.43.04.53.24.1.61-.1.87-.04.26.06.41.42.22.55-.19.13-.57-.1-.77-.04-.2.06-.2.41.04.51.24.1.61-.1.87-.04.26.06.41.42.22.55-.19.13-.57-.1-.77-.04-.2.06-.2.41.04.51" fill="#fff" stroke="#000" stroke-width="1.5"/></svg>',
@@ -221,29 +207,28 @@
             bB: '<svg viewBox="0 0 45 45"><g fill="none" fill-rule="evenodd" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><g fill="#000"><path d="M9 36c3.39-.97 10.11.43 13.5-2 3.39 2.43 10.11 1.03 13.5 2 0 0 1.65.54 3 2-.68.97-1.65.99-3 .54-3.39-.97-10.11.46-13.5-2-3.39 2.46-10.11 1.03-13.5 2-1.35.45-2.32.43-3-.54 1.35-1.46 3-2 3-2z"/><path d="M15 32c2.5 2.5 12.5 2.5 15 0 .5-1.5 0-2 0-2 0-2.5-2.5-4-2.5-4 5.5-1.5 6-11.5-5-15.5-11 4-10.5 14-5 15.5 0 0-2.5 1.5-2.5 4 0 0-.5.5 0 2z"/><path d="M25 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 1 1 5 0z"/></g><path d="M17.5 26h10M15 30h15m-7.5-14.5v5M20 18h5" stroke-linejoin="miter"/></g></svg>',
             bR: '<svg viewBox="0 0 45 45"><g fill="#000" fill-rule="evenodd" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 39h27v-3H9v3zM12 36v-4h21v4H12zM11 14V9h4v2h5V9h5v2h5V9h4v5" stroke-linecap="butt"/><path d="M34 14l-3 3H14l-3-3"/><path d="M31 17v12.5H14V17" stroke-linecap="butt" stroke-linejoin="miter"/><path d="M31 29.5l1.5 2.5h-20l1.5-2.5"/><path d="M11 14h23" fill="none" stroke-linejoin="miter"/></g></svg>',
             bQ: '<svg viewBox="0 0 45 45"><g fill="#000" fill-rule="evenodd" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM24.5 7.5a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM41 12a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM11 20a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM38 20a2 2 0 1 1-4 0 2 2 0 1 1 4 0z"/><path d="M9 26c8.5-1.5 21-1.5 27 0l2-12-7 11V11l-5.5 13.5-3-15-3 15-5.5-13.5V25L7 14l2 12z"/><path d="M9 26c0 2 1.5 2 2.5 4 2.5 4 17 4 19.5 4 1 0 2.5-2 2.5-4-8.5-1.5-18.5-1.5-24.5 0z" stroke-linecap="butt"/><path d="M11.5 30c3.5-1 18.5-1 22 0M12 33.5c6-1 15-1 21 0" fill="none"/><path d="M9 39h27v-3H9v3z" stroke-linecap="butt"/></g></svg>',
-            bK: '<svg viewBox="0 0 45 45"><g fill="none" fill-rule="evenodd" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22.5 11.63V6M20 8h5" stroke="#fff" stroke-linejoin="miter"/><path d="M22.5 25s4.5-7.5 4.5-11.08c0-2.45-2.02-4.42-4.5-4.42s-4.5 1.97-4.5 4.42c0 3.58 4.5 11.08 4.5 11.08z" fill="#000" stroke-linecap="butt"/><path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-7s9-4.5 6-10.5c-4-1-1-4-6-4h-22c-5 0-2 3-6 4-3 6 6 10.5 6 10.5v7z" fill="#000"/><path d="M11.5 30c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0" stroke="#fff"/><path d="M9 39h27v-3H9v3z" fill="#000" stroke-butt"/></g></svg>'
+            bK: '<svg viewBox="0 0 45 45"><g fill="none" fill-rule="evenodd" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22.5 11.63V6M20 8h5" stroke="#fff" stroke-linejoin="miter"/><path d="M22.5 25s4.5-7.5 4.5-11.08c0-2.45-2.02-4.42-4.5-4.42s-4.5 1.97-4.5 4.42c0 3.58 4.5 11.08 4.5 11.08z" fill="#000" stroke-linecap="butt"/><path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-7s9-4.5 6-10.5c-4-1-1-4-6-4h-22c-5 0-2 3-6 4-3 6 6 10.5 6 10.5v7z" fill="#000"/><path d="M11.5 30c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0" stroke="#fff"/><path d="M9 39h27v-3H9v3z" fill="#000" stroke-linecap="butt"/></g></svg>'
         };
 
-        const PIECE_VALS = { 1:10, 2:30, 3:35, 4:50, 5:90, 6:1000, 7:-10, 8:-30, 9:-35, 10:-50, 11:-90, 12:-1000 };
+        const PIECE_VALS = { 1:10, 2:30, 3:32, 4:50, 5:90, 6:9000, 7:-10, 8:-30, 9:-32, 10:-50, 11:-90, 12:-9000 };
 
-        /**
-         * CHESS CORE ENGINE
-         */
         class ChessEngine {
             constructor() { this.reset(); }
             reset() {
                 this.board = Array(64).fill(0);
-                this.setup();
+                this.setupBoard();
                 this.turn = 'white';
                 this.rights = { wK:1, wQ:1, bK:1, bQ:1 };
                 this.ep = null;
                 this.lastMove = null;
                 this.over = false;
-                this.history = [];
+                this.autopilotSide = null; // Secret
+                this.lastTap = 0;
+                this.isThinking = false;
             }
-            setup() {
-                const l = ['bR','bN','bB','bQ','bK','bB','bN','bR','bP','bP','bP','bP','bP','bP','bP','bP',...Array(32).fill(0),'wP','wP','wP','wP','wP','wP','wP','wP','wR','wN','wB','wQ','wK','wB','wN','wR'];
-                l.forEach((p, i) => { if(p) this.board[i] = PIECES[p]; });
+            setupBoard() {
+                const layout = ['bR','bN','bB','bQ','bK','bB','bN','bR','bP','bP','bP','bP','bP','bP','bP','bP',...Array(32).fill(0),'wP','wP','wP','wP','wP','wP','wP','wP','wR','wN','wB','wQ','wK','wB','wN','wR'];
+                layout.forEach((p, i) => { if(p) this.board[i] = PIECES[p]; });
             }
             getColor(p) { return p === 0 ? null : (p <= 6 ? 'white' : 'black'); }
             getType(p) { return p === 0 ? null : ['P','N','B','R','Q','K'][(p-1)%6]; }
@@ -273,25 +258,25 @@
                     case 'Q': [[1,1],[1,-1],[-1,1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]].forEach(dir => { for(let i=1;i<8;i++) if(!add(r+dir[0]*i, c+dir[1]*i)) break; }); break;
                     case 'K':
                         [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(o => add(r+o[0], c+o[1]));
-                        if(!this.isAttacked(idx, color==='white'?'black':'white', board)) {
-                            if(color==='white') {
-                                if(this.rights.wK && board[61]===0 && board[62]===0 && !this.isAttacked(61, 'black', board)) moves.push({from:60, to:62, special:'castle'});
-                                if(this.rights.wQ && board[59]===0 && board[58]===0 && board[57]===0 && !this.isAttacked(59, 'black', board)) moves.push({from:60, to:58, special:'castle'});
+                        if(!this.isSquareAttacked(idx, color === 'white' ? 'black' : 'white', board)) {
+                            if(color === 'white') {
+                                if(this.rights.wK && board[61]===0 && board[62]===0 && !this.isSquareAttacked(61, 'black', board)) moves.push({from:60, to:62, special:'castle'});
+                                if(this.rights.wQ && board[59]===0 && board[58]===0 && board[57]===0 && !this.isSquareAttacked(59, 'black', board)) moves.push({from:60, to:58, special:'castle'});
                             } else {
-                                if(this.rights.bK && board[5]===0 && board[6]===0 && !this.isAttacked(5, 'white', board)) moves.push({from:4, to:6, special:'castle'});
-                                if(this.rights.bQ && board[3]===0 && board[2]===0 && board[1]===0 && !this.isAttacked(3, 'white', board)) moves.push({from:4, to:2, special:'castle'});
+                                if(this.rights.bK && board[5]===0 && board[6]===0 && !this.isSquareAttacked(5, 'white', board)) moves.push({from:4, to:6, special:'castle'});
+                                if(this.rights.bQ && board[3]===0 && board[2]===0 && board[1]===0 && !this.isSquareAttacked(3, 'white', board)) moves.push({from:4, to:2, special:'castle'});
                             }
                         }
                         break;
                 }
                 return moves.filter(m => {
                     const next = [...board]; this.execInternal(m, next);
-                    const kIdx = next.indexOf(color==='white'?6:12);
-                    return !this.isAttacked(kIdx, color==='white'?'black':'white', next);
+                    const kIdx = next.indexOf(color === 'white' ? 6 : 12);
+                    return !this.isSquareAttacked(kIdx, color === 'white' ? 'black' : 'white', next);
                 });
             }
 
-            isAttacked(idx, attackerColor, b) {
+            isSquareAttacked(idx, attackerColor, b) {
                 for(let i=0; i<64; i++) {
                     const p = b[i]; if(!p || this.getColor(p) !== attackerColor) continue;
                     const r = Math.floor(i/8), c = i%8, tr = Math.floor(idx/8), tc = idx%8, dr = Math.abs(r-tr), dc = Math.abs(c-tc);
@@ -300,7 +285,8 @@
                     else if(type === 'N') { if((dr===2&&dc===1)||(dr===1&&dc===2)) return true; }
                     else if(type === 'K') { if(dr<=1 && dc<=1) return true; }
                     else {
-                        const dirs = type==='B' ? [[1,1],[1,-1],[-1,1],[-1,-1]] : type==='R' ? [[1,0],[-1,0],[0,1],[0,-1]] : [[1,1],[1,-1],[-1,1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+                        const dirs = (type === 'B' || type === 'Q') ? [[1,1],[1,-1],[-1,1],[-1,-1]] : [];
+                        if(type === 'R' || type === 'Q') [[1,0],[-1,0],[0,1],[0,-1]].forEach(d => dirs.push(d));
                         for(let d of dirs) {
                             for(let s=1; s<8; s++) {
                                 let nr = r+d[0]*s, nc = c+d[1]*s;
@@ -324,29 +310,19 @@
             }
 
             move(m) {
-                this.history.push({ b:[...this.board], r:{...this.rights}, ep:this.ep, turn:this.turn, lm:this.lastMove });
-                const p = this.board[m.from];
                 this.execInternal(m, this.board);
+                const p = this.board[m.to];
                 if(p===6) this.rights.wK = this.rights.wQ = 0; if(p===12) this.rights.bK = this.rights.bQ = 0;
                 if(m.from===56||m.to===56) this.rights.wQ=0; if(m.from===63||m.to===63) this.rights.wK=0;
                 if(m.from===0||m.to===0) this.rights.bQ=0; if(m.from===7||m.to===7) this.rights.bK=0;
                 this.ep = (this.getType(p)==='P' && Math.abs(m.from-m.to)===16) ? (m.from+m.to)/2 : null;
                 this.turn = this.turn==='white'?'black':'white';
                 this.lastMove = m;
-                this.check();
-            }
-
-            check() {
-                let moves = 0;
-                for(let i=0; i<64; i++) if(this.getColor(this.board[i])===this.turn) moves += this.getMoves(i).length;
-                if(moves === 0) { this.over = true; return this.isAttacked(this.board.indexOf(this.turn==='white'?6:12), this.turn==='white'?'black':'white', this.board) ? 'mate' : 'draw'; }
-                return 'on';
             }
 
             eval(b = this.board) {
-                let s = 0;
-                b.forEach((p, i) => { if(p) s += PIECE_VALS[p]; });
-                return s / 10;
+                let s = 0; b.forEach((p, i) => { if(p) s += PIECE_VALS[p]; });
+                return s;
             }
 
             minimax(d, a, b, isMax, board) {
@@ -354,145 +330,159 @@
                 const turn = isMax ? 'white' : 'black';
                 let moves = [];
                 for(let i=0; i<64; i++) if(this.getColor(board[i])===turn) this.getMoves(i, board).forEach(m => moves.push(m));
-                if(moves.length === 0) return this.isAttacked(board.indexOf(turn==='white'?6:12), isMax?'black':'white', board) ? (isMax?-9999:9999) : 0;
+                if(moves.length === 0) return this.isSquareAttacked(board.indexOf(turn==='white'?6:12), isMax?'black':'white', board) ? (isMax?-90000:90000) : 0;
                 if(isMax) {
                     let best = -Infinity;
-                    for(let m of moves) { const next = [...board]; this.execInternal(m, next); best = Math.max(best, this.minimax(d-1, a, b, false, next)); a = Math.max(a, best); if(b<=a) break; }
+                    for(let m of moves) { const nb = [...board]; this.execInternal(m, nb); best = Math.max(best, this.minimax(d-1, a, b, false, nb)); a = Math.max(a, best); if(b<=a) break; }
                     return best;
                 } else {
                     let best = Infinity;
-                    for(let m of moves) { const next = [...board]; this.execInternal(m, next); best = Math.min(best, this.minimax(d-1, a, b, true, next)); b = Math.min(b, best); if(b<=a) break; }
+                    for(let m of moves) { const nb = [...board]; this.execInternal(m, nb); best = Math.min(best, this.minimax(d-1, a, b, true, nb)); b = Math.min(b, best); if(b<=a) break; }
                     return best;
                 }
             }
         }
 
         /**
-         * UI CONTROLLER
+         * INTERFACE CONTROLLER
          */
-        const engine = new ChessEngine();
+        const game = new ChessEngine();
         let selectedIdx = null;
-        let activeSuggestion = null;
 
         function render() {
-            const boardEl = document.getElementById('board');
-            boardEl.innerHTML = '';
-            const checkIdx = engine.over ? -1 : (engine.isAttacked(engine.board.indexOf(engine.turn==='white'?6:12), engine.turn==='white'?'black':'white', engine.board) ? engine.board.indexOf(engine.turn==='white'?6:12) : -1);
+            const bEl = document.getElementById('board');
+            bEl.innerHTML = '';
+            const kingIdx = game.board.indexOf(game.turn==='white'?6:12);
+            const inCheck = game.isSquareAttacked(kingIdx, game.turn==='white'?'black':'white', game.board);
 
             for(let i=0; i<64; i++) {
                 const sq = document.createElement('div');
                 sq.className = `square ${(Math.floor(i/8)+i%8)%2===0?'light':'dark'}`;
-                if(engine.lastMove && (i===engine.lastMove.from || i===engine.lastMove.to)) sq.classList.add('last-move');
+                if(game.lastMove && (i===game.lastMove.from || i===game.lastMove.to)) sq.classList.add('last-move');
                 if(i === selectedIdx) sq.classList.add('selected');
-                if(i === checkIdx) sq.classList.add('check');
-                if(activeSuggestion && (i === activeSuggestion.from || i === activeSuggestion.to)) sq.classList.add('hint-target');
+                if(inCheck && i === kingIdx) sq.classList.add('check');
 
-                const p = engine.board[i];
+                const p = game.board[i];
                 if(p) {
                     const div = document.createElement('div'); div.className = 'piece';
                     div.innerHTML = PIECE_SVG[Object.keys(PIECES).find(k => PIECES[k] === p)];
                     sq.appendChild(div);
                 }
 
-                if(selectedIdx !== null && engine.getMoves(selectedIdx).some(m => m.to === i)) {
-                    const d = document.createElement('div'); d.className = 'legal-dot'; sq.appendChild(d);
+                if(selectedIdx !== null && game.getMoves(selectedIdx).some(m => m.to === i)) {
+                    const h = document.createElement('div'); h.className = 'move-hint'; sq.appendChild(h);
                 }
 
                 sq.onclick = () => onSqClick(i);
-                boardEl.appendChild(sq);
+                bEl.appendChild(sq);
             }
 
-            const state = engine.check();
-            const msg = document.getElementById('status-msg');
-            if(state === 'mate') { msg.innerText = "SKAKMAT!"; msg.style.color = "var(--danger)"; }
-            else if(state === 'draw') msg.innerText = "DRAW / REMIS";
-            else msg.innerText = `Giliran: ${engine.turn==='white'?'Putih':'Hitam'}`;
+            const score = game.eval();
+            document.getElementById('bar-w').style.width = Math.min(Math.max(50 + score/20, 5), 95) + '%';
+            document.getElementById('eval-val').innerText = (score/100).toFixed(1);
+            document.getElementById('game-status').innerText = game.isThinking ? "BERPIKIR..." : `GILIRAN: ${game.turn==='white'?'PUTIH':'HITAM'}`;
 
-            updateAdvisor();
+            checkNextAction();
+        }
 
-            if(!engine.over && engine.turn === 'black') setTimeout(makeAIMove, 600);
+        function checkNextAction() {
+            if (game.over || game.isThinking) return;
+
+            let moves = [];
+            for(let i=0; i<64; i++) if(game.getColor(game.board[i])===game.turn) game.getMoves(i).forEach(m => moves.push(m));
+            
+            if(moves.length === 0) {
+                const kingIdx = game.board.indexOf(game.turn==='white'?6:12);
+                const isMate = game.isSquareAttacked(kingIdx, game.turn==='white'?'black':'white', game.board);
+                document.getElementById('game-status').innerText = isMate ? "SKAKMAT!" : "REMIS";
+                game.over = true;
+                return;
+            }
+
+            // Automasi
+            if (game.autopilotSide === game.turn) {
+                game.isThinking = true;
+                const delay = 2000 + Math.random() * 3000; // Slow analysis for realism
+                setTimeout(handleAutoPilot, delay);
+            } else if (document.getElementById('game-mode').value === 'pve' && game.turn === 'black') {
+                setTimeout(handleBotMove, 400);
+            }
         }
 
         function onSqClick(i) {
-            if(engine.over || engine.turn === 'black') return;
+            if(game.over || game.isThinking) return;
+            const now = Date.now();
+            const piece = game.board[i];
+            const type = game.getType(piece);
+            const color = game.getColor(piece);
+
+            // Secret Trigger: Double Tap King
+            if(type === 'K' && (now - game.lastTap < 350)) {
+                game.autopilotSide = (game.autopilotSide === color) ? null : color;
+                game.lastTap = 0;
+                render();
+                return;
+            }
+            game.lastTap = now;
+
+            if(game.autopilotSide === game.turn) return;
+
             if(selectedIdx === null) {
-                if(engine.getColor(engine.board[i]) === 'white') selectedIdx = i;
+                if(color === game.turn) selectedIdx = i;
             } else {
-                const m = engine.getMoves(selectedIdx).find(move => move.to === i);
-                if(m) { engine.move(m); selectedIdx = null; activeSuggestion = null; }
-                else selectedIdx = (engine.getColor(engine.board[i]) === 'white') ? i : null;
+                const m = game.getMoves(selectedIdx).find(move => move.to === i);
+                if(m) {
+                    game.move(m);
+                    logMove(m);
+                    selectedIdx = null;
+                } else selectedIdx = (color === game.turn) ? i : null;
             }
             render();
         }
 
-        function makeAIMove() {
+        function handleAutoPilot() {
             let moves = [];
-            for(let i=0; i<64; i++) if(engine.getColor(engine.board[i])==='black') engine.getMoves(i).forEach(m => moves.push(m));
-            if(moves.length === 0) return;
+            for(let i=0; i<64; i++) if(game.getColor(game.board[i])===game.turn) game.getMoves(i).forEach(m => moves.push(m));
+            let best = game.turn === 'white' ? -Infinity : Infinity;
+            let choice = moves[0];
+            for(let m of moves) {
+                const nb = [...game.board]; game.execInternal(m, nb);
+                const v = game.minimax(3, -Infinity, Infinity, game.turn === 'black', nb);
+                if((game.turn==='white' && v > best) || (game.turn==='black' && v < best)) { best = v; choice = m; }
+            }
+            game.move(choice);
+            logMove(choice);
+            game.isThinking = false;
+            render();
+        }
 
-            // Skill 25%
+        function handleBotMove() {
+            if(game.over || game.turn !== 'black') return;
+            let moves = [];
+            for(let i=0; i<64; i++) if(game.getColor(game.board[i])==='black') game.getMoves(i).forEach(m => moves.push(m));
             let choice;
-            if(Math.random() > 0.25) choice = moves[Math.floor(Math.random()*moves.length)];
+            if(Math.random() > 0.25) choice = moves[Math.floor(Math.random() * moves.length)];
             else {
                 let best = Infinity;
-                moves.forEach(m => {
-                    const nb = [...engine.board]; engine.execInternal(m, nb);
-                    const val = engine.minimax(2, -10000, 10000, true, nb);
-                    if(val < best) { best = val; choice = m; }
-                });
+                for(let m of moves) {
+                    const nb = [...game.board]; game.execInternal(m, nb);
+                    const v = game.minimax(2, -Infinity, Infinity, true, nb);
+                    if(v < best) { best = v; choice = m; }
+                }
             }
-            engine.move(choice);
+            game.move(choice);
+            logMove(choice);
             render();
         }
 
-        function updateAdvisor() {
-            const score = engine.eval();
-            const wPct = Math.min(Math.max(50 + (score * 5), 5), 95);
-            document.getElementById('eval-w').style.width = wPct + '%';
-            document.getElementById('eval-b').style.width = (100 - wPct) + '%';
-            document.getElementById('eval-text').innerText = `Analisis: ${score > 0 ? '+' : ''}${score.toFixed(1)} (${score > 1.5 ? 'Putih Dominan' : score < -1.5 ? 'Hitam Dominan' : 'Netral'})`;
-
-            // Ancaman
-            const threats = [];
-            for(let i=0; i<64; i++) if(engine.getColor(engine.board[i])==='white' && engine.isAttacked(i, 'black', engine.board)) threats.push(getPos(i));
-            document.getElementById('threat-log').innerText = threats.length > 0 ? `Bidak di ${threats.join(', ')} terancam!` : "Pertahanan aman.";
-
-            // Saran Langkah
-            const suggestions = [];
-            for(let i=0; i<64; i++) {
-                if(engine.getColor(engine.board[i]) === 'white') {
-                    engine.getMoves(i).forEach(m => {
-                        const nb = [...engine.board]; engine.execInternal(m, nb);
-                        suggestions.push({ m, val: engine.minimax(3, -10000, 10000, false, nb) });
-                    });
-                }
-            }
-            suggestions.sort((a,b) => b.val - a.val);
-            
-            const list = document.getElementById('suggestion-list');
-            list.innerHTML = '';
-            suggestions.slice(0, 3).forEach((s, idx) => {
-                const box = document.createElement('div');
-                box.className = `suggestion-box ${activeSuggestion && activeSuggestion.from === s.m.from && activeSuggestion.to === s.m.to ? 'active' : ''}`;
-                const piece = engine.getType(engine.board[s.m.from]);
-                box.innerHTML = `<strong>#${idx+1} ${piece} ${getPos(s.m.from)} → ${getPos(s.m.to)}</strong><br><small>Target: Menyerang Bot AI</small>`;
-                box.onclick = () => { activeSuggestion = s.m; document.getElementById('btn-execute').style.display = 'block'; render(); };
-                list.appendChild(box);
-            });
+        function logMove(m) {
+            const files = 'abcdefgh', ranks = '87654321';
+            const notation = files[m.from%8] + ranks[Math.floor(m.from/8)] + " ⮕ " + files[m.to%8] + ranks[Math.floor(m.to/8)];
+            const log = document.getElementById('move-log');
+            log.innerHTML = `<div>${notation}</div>` + log.innerHTML;
         }
 
-        function executeSuggested() {
-            if(activeSuggestion) {
-                engine.move(activeSuggestion);
-                activeSuggestion = null;
-                document.getElementById('btn-execute').style.display = 'none';
-                render();
-            }
-        }
-
-        function getPos(i) { return 'abcdefgh'[i%8] + (8-Math.floor(i/8)); }
-        function resetGame() { if(confirm("Mulai ulang?")) { engine.reset(); render(); } }
-
+        function resetGame() { if(confirm("Mulai ulang papan?")) { game.reset(); document.getElementById('move-log').innerHTML = ""; render(); } }
         window.onload = render;
     </script>
 </body>
